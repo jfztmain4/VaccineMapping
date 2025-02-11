@@ -148,6 +148,12 @@
             }
         });
 
+        document.getElementById('visitID').addEventListener('input', function() {
+            // Clear the pins when Visit ID changes
+            pins = [];
+            drawPins();
+        });
+
         function storePinsInFirebase() {
             let visitID = document.getElementById('visitID').value;
             let clinicName = document.getElementById('clinicName').value;
@@ -220,7 +226,7 @@
             });
         }
 
-        // Load Clinic Names when the page loads
+        // Load Clinic Names and Visit IDs when the page loads
         window.onload = function() {
             loadClinicNames();
             loadVisitIDs();

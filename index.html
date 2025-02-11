@@ -148,6 +148,10 @@
             }
         });
 
+        document.getElementById('clinicName').addEventListener('input', function() {
+            loadVisitIDs(); // Repopulate Visit IDs when Clinic Name changes
+        });
+
         document.getElementById('visitID').addEventListener('input', function() {
             // Clear the pins when Visit ID changes
             pins = [];
@@ -231,5 +235,4 @@
             loadClinicNames();
         };
     </script>
-</body>
-</html>
+</body

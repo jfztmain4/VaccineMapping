@@ -6,8 +6,8 @@
     <title>Vaccine Mapping</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.0/firebase-database.js"></script>
     <style>
         body, html {
             height: 100%;
@@ -55,6 +55,8 @@
         <canvas id="canvasOverlay" width="1136" height="763"></canvas>
     </div>
     <div id="controlPanel">
+        <label for="clinicName">Clinic Name:</label>
+        <input type="text" id="clinicName">
         <label for="visitID">Visit ID:</label>
         <input type="text" id="visitID">
         <button id="savePin">Accept Pin and Save</button>
@@ -104,12 +106,13 @@
 
         function promptForUnits(x, y) {
             let units = prompt("Enter the vaccine units:");
+            let clinicName = document.getElementById('clinicName').value;
             let visitID = document.getElementById('visitID').value;
-            if (units && visitID) {
-                pins.push({ x: x, y: y, units: units, visitID: visitID });
+            if (units && visitID && clinicName) {
+                pins.push({ x: x, y: y, units: units, visitID: visitID, clinicName: clinicName });
                 drawPins();
             } else {
-                alert("Please enter both Visit ID and Units.");
+                alert("Please enter Clinic Name, Visit ID, and Units.");
             }
         }
 
@@ -146,9 +149,10 @@
 
         function storePinsInFirebase() {
             let visitID = document.getElementById('visitID').value;
-            if (visitID) {
-                let pinData = JSON.stringify(pins.filter(pin => pin.visitID === visitID));
-                firebase.database().ref(`pins/${visitID}`).set({
+            let clinicName = document.getElementById('clinicName').value;
+            if (visitID && clinicName) {
+                let pinData = JSON.stringify(pins.filter(pin => pin.visitID === visitID && pin.clinicName === clinicName));
+                firebase.database().ref(`pins/${clinicName}/${visitID}`).set({
                     data: pinData
                 }, function(error) {
                     if (error) {
@@ -160,34 +164,44 @@
                     }
                 });
             } else {
-                alert("Please enter Visit ID.");
+                alert("Please enter Clinic Name and Visit ID.");
             }
         }
 
         function retrievePinsFromFirebase(visitID) {
-            firebase.database().ref(`pins/${visitID}`).once('value').then(function(snapshot) {
-                let pinData = decodeURIComponent(snapshot.val().data);
-                pins = JSON.parse(pinData);
-                drawPins();
-                console.log("Pins data retrieved from Firebase: ", pins);
-            }).catch(function(error) {
-                console.error("Error retrieving data from Firebase: ", error);
-            });
+            let clinicName = document.getElementById('clinicName').value;
+            if (clinicName) {
+                firebase.database().ref(`pins/${clinicName}/${visitID}`).once('value').then(function(snapshot) {
+                    let pinData = decodeURIComponent(snapshot.val().data);
+                    pins = JSON.parse(pinData);
+                    drawPins();
+                    console.log("Pins data retrieved from Firebase: ", pins);
+                }).catch(function(error) {
+                    console.error("Error retrieving data from Firebase: ", error);
+                });
+            } else {
+                alert("Please enter Clinic Name.");
+            }
         }
 
         function loadVisitIDs() {
-            firebase.database().ref('pins').once('value').then(function(snapshot) {
-                let visitIDCombo = document.getElementById('visitIDCombo');
-                visitIDCombo.innerHTML = ''; // Clear existing options
-                snapshot.forEach(function(childSnapshot) {
-                    let option = document.createElement('option');
-                    option.value = childSnapshot.key;
-                    option.textContent = childSnapshot.key;
-                    visitIDCombo.appendChild(option);
+            let clinicName = document.getElementById('clinicName').value;
+            if (clinicName) {
+                firebase.database().ref(`pins/${clinicName}`).once('value').then(function(snapshot) {
+                    let visitIDCombo = document.getElementById('visitIDCombo');
+                    visitIDCombo.innerHTML = ''; // Clear existing options
+                    snapshot.forEach(function(childSnapshot) {
+                        let option = document.createElement('option');
+                        option.value = childSnapshot.key;
+                        option.textContent = childSnapshot.key;
+                        visitIDCombo.appendChild(option);
+                    });
+                }).catch(function(error) {
+                    console.error("Error loading Visit IDs from Firebase: ", error);
                 });
-            }).catch(function(error) {
-                console.error("Error loading Visit IDs from Firebase: ", error);
-            });
+            } else {
+                alert("Please enter Clinic Name to load Visit IDs.");
+            }
         }
 
         // Load Visit IDs when the page loads

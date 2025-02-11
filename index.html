@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vaccine Mapping</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            overflow: auto;
+            touch-action: pan-x pan-y;
+        }
+        .container {
+            width: 1136px;
+            height: 763px;
+            position: relative;
+            overflow: hidden;
+        }
+        #image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform-origin: top left;
+            width: 100%;
+            height: 100%;
+        }
+        #canvasOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Vaccine Mapping</h1>
+    <div class="container" id="container">
+        <img id="image" src="Complete_Human.png" alt="Human Image">
+        <canvas id="canvasOverlay" width="1136" height="763"></canvas>
+    </div>
+
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGI-_m-wT3Z594nXXh3FWt3m30nPoDiqM",
+            authDomain: "jjqanimalbiteclinic-bd42a.firebaseapp.com",
+            databaseURL: "https://jjqanimalbiteclinic-bd42a-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "jjqanimalbiteclinic-bd42a",
+            storageBucket: "jjqanimalbiteclinic-bd42a.appspot.com",
+            messagingSenderId: "205845669200",
+            appId: "1:205845669200:web:a3cc9a8e1d2a9db3e4f855",
+            measurementId: "G-Z9DMTLPRH0"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        let pins = [];
+        let container = document.getElementById('container');
+        let canvas = document.getElementById('canvasOverlay');
+        let context = canvas.getContext('2d');
+        let scale = 1;
+
+        function drawPins() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.save();
+            context.scale(scale, scale);
+            pins.forEach(pin => {
+                context.fillStyle = 'red';
+                context.beginPath();
+                context.arc(pin.x, pin.y, 5 / scale, 0, 2 * Math.PI);
+                context.fill();
+                context.fillStyle = 'black';
+                context.fillText(pin.units + " Units", pin.x + 10 / scale, pin.y - 5 / scale);
+            });
+            context.restore();
+        }
+
+        function promptForUnits(x, y) {
+            let units = prompt("Enter the vaccine units:");
+            let visitID = getNextVisitID();
+            if (units) {
+                pins.push({ x: x, y: y, units: units, visitID: visitID });
+                drawPins();
+                storePinsInFirebase();
+            }
+        }
+
+        canvas.addEventListener('click', function(event) {
+            let rect = canvas.getBoundingClientRect();
+            let x = (event.clientX - rect.left) / scale;
+            let y = (event.clientY - rect.top) / scale;
+            promptForUnits(x, y);
+        });
+
+        function getNextVisitID() {
+            if (pins.length === 0) {
+                return 1;
+            } else {
+                return Math.max(...pins.map(pin => pin.visitID)) + 1;
+            }
+        }
+
+        function storePinsInFirebase() {
+            let pinData = JSON.stringify(pins);
+            firebase.database().ref('pins').set({
+                data: pinData
+            }, function(error) {
+                if (error) {
+                    console.error("Error storing data in Firebase: ", error);
+                } else {
+                    console.log("Pins data stored in Firebase.");
+                }
+            });
+        }
+
+        function retrievePinsFromFirebase() {
+            firebase.database().ref('pins').once('value').then(function(snapshot) {
+                let pinData = decodeURIComponent(snapshot.val().data);
+                pins = JSON.parse(pinData);
+                drawPins();
+                console.log("Pins data retrieved from Firebase: ", pins);
+            }).catch(function(error) {
+                console.error("Error retrieving data from Firebase: ", error);
+            });
+        }
+
+        // Retrieve pins data from Firebase when the page loads
+        window.onload = retrievePinsFromFirebase;
+    </script>
+</body>
+</html>

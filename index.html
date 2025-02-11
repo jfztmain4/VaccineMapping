@@ -55,6 +55,8 @@
         <canvas id="canvasOverlay" width="1136" height="763"></canvas>
     </div>
     <div id="controlPanel">
+        <label for="clinicNameSelect">Select Clinic Name:</label>
+        <select id="clinicNameSelect" style="width: 100%;"></select>
         <label for="clinicName">Clinic Name:</label>
         <input type="text" id="clinicName" list="clinicNameList">
         <datalist id="clinicNameList"></datalist>
@@ -148,6 +150,14 @@
             }
         });
 
+        document.getElementById('clinicNameSelect').addEventListener('change', function() {
+            let clinicName = this.value;
+            if (clinicName) {
+                document.getElementById('clinicName').value = clinicName;
+                loadVisitIDs(); // Load visit IDs for the selected clinic
+            }
+        });
+
         document.getElementById('visitID').addEventListener('input', function() {
             // Clear the pins when Visit ID changes
             pins = [];
@@ -215,22 +225,6 @@
         function loadClinicNames() {
             firebase.database().ref('pins').once('value').then(function(snapshot) {
                 let clinicNameList = document.getElementById('clinicNameList');
+                let clinicNameSelect = document.getElementById('clinicNameSelect');
                 clinicNameList.innerHTML = ''; // Clear existing options
-                snapshot.forEach(function(childSnapshot) {
-                    let option = document.createElement('option');
-                    option.value = childSnapshot.key;
-                    clinicNameList.appendChild(option);
-                });
-            }).catch(function(error) {
-                console.error("Error loading Clinic Names from Firebase: ", error);
-            });
-        }
-
-        // Load Clinic Names and Visit IDs when the page loads
-        window.onload = function() {
-            loadClinicNames();
-            loadVisitIDs();
-        };
-    </script>
-</body>
-</html>
+                clinicNameSelect.innerHTML

@@ -222,10 +222,28 @@
             }
         }
 
-        function loadClinicNames() {
-            firebase.database().ref('pins').once('value').then(function(snapshot) {
-                let clinicNameList = document.getElementById('clinicNameList');
-                let clinicNameSelect = document.getElementById('clinicNameSelect');
-                clinicNameList.innerHTML = ''; // Clear existing options
-                clinicNameSelect.innerHTML = ''; // Clear existing options
-                snapshot
+       function loadClinicNames() {
+    firebase.database().ref('pins').once('value').then(function(snapshot) {
+        let clinicNameList = document.getElementById('clinicNameList');
+        let clinicNameSelect = document.getElementById('clinicNameSelect');
+        clinicNameList.innerHTML = ''; // Clear existing options
+        clinicNameSelect.innerHTML = ''; // Clear existing options
+        snapshot.forEach(function(childSnapshot) {
+            let option1 = document.createElement('option');
+            option1.value = childSnapshot.key;
+            clinicNameList.appendChild(option1);
+            let option2 = document.createElement('option');
+            option2.value = childSnapshot.key;
+            option2.textContent = childSnapshot.key;
+            clinicNameSelect.appendChild(option2);
+        });
+    }).catch(function(error) {
+        console.error("Error loading Clinic Names from Firebase: ", error);
+    });
+}
+
+// Load Clinic Names and initialize the page
+window.onload = function() {
+    loadClinicNames();
+};
+

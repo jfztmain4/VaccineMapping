@@ -36,22 +36,27 @@
             width: 100%;
             height: 100%;
         }
-        .controls {
-            margin: 10px;
+        #controlPanel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background-color: white;
+            padding: 10px;
+            border: 1px solid #ccc;
         }
     </style>
 </head>
 <body>
     <h1>Vaccine Mapping</h1>
-    <div class="controls">
-        <label for="visitID">Visit ID:</label>
-        <input type="text" id="visitID">
-        <button id="acceptSavePin">Accept and Save Pin</button>
-        <button id="undoLastPin">Undo Last Pin</button>
-    </div>
     <div class="container" id="container">
         <img id="image" src="Complete_Human.png" alt="Human Image">
         <canvas id="canvasOverlay" width="1136" height="763"></canvas>
+    </div>
+    <div id="controlPanel">
+        <label for="visitID">Visit ID:</label>
+        <input type="text" id="visitID">
+        <button id="savePin">Accept Pin and Save</button>
+        <button id="undoPin">Undo Last Pin</button>
     </div>
 
     <script>
@@ -95,11 +100,10 @@
             let units = prompt("Enter the vaccine units:");
             let visitID = document.getElementById('visitID').value;
             if (units && visitID) {
-                pins.push({ x: x, y: y, units: units, visitID: parseInt(visitID) });
+                pins.push({ x: x, y: y, units: units, visitID: visitID });
                 drawPins();
-                storePinsInFirebase();
             } else {
-                alert('Please enter Visit ID and Vaccine Units.');
+                alert("Please enter both Visit ID and Units.");
             }
         }
 
@@ -110,41 +114,39 @@
             promptForUnits(x, y);
         });
 
-        document.getElementById('acceptSavePin').addEventListener('click', function() {
+        document.getElementById('savePin').addEventListener('click', function() {
             storePinsInFirebase();
         });
 
-        document.getElementById('undoLastPin').addEventListener('click', function() {
+        document.getElementById('undoPin').addEventListener('click', function() {
             if (pins.length > 0) {
                 pins.pop();
                 drawPins();
-                storePinsInFirebase();
+            } else {
+                alert("No pins to undo.");
             }
         });
 
-        function getNextVisitID() {
-            if (pins.length === 0) {
-                return 1;
+        function storePinsInFirebase() {
+            let visitID = document.getElementById('visitID').value;
+            if (visitID) {
+                let pinData = JSON.stringify(pins.filter(pin => pin.visitID === visitID));
+                firebase.database().ref(`pins/${visitID}`).set({
+                    data: pinData
+                }, function(error) {
+                    if (error) {
+                        console.error("Error storing data in Firebase: ", error);
+                    } else {
+                        console.log("Pins data stored in Firebase.");
+                    }
+                });
             } else {
-                return Math.max(...pins.map(pin => pin.visitID)) + 1;
+                alert("Please enter Visit ID.");
             }
         }
 
-        function storePinsInFirebase() {
-            let pinData = JSON.stringify(pins);
-            firebase.database().ref('pins').set({
-                data: pinData
-            }, function(error) {
-                if (error) {
-                    console.error("Error storing data in Firebase: ", error);
-                } else {
-                    console.log("Pins data stored in Firebase.");
-                }
-            });
-        }
-
-        function retrievePinsFromFirebase() {
-            firebase.database().ref('pins').once('value').then(function(snapshot) {
+        function retrievePinsFromFirebase(visitID) {
+            firebase.database().ref(`pins/${visitID}`).once('value').then(function(snapshot) {
                 let pinData = decodeURIComponent(snapshot.val().data);
                 pins = JSON.parse(pinData);
                 drawPins();
@@ -154,8 +156,13 @@
             });
         }
 
-        // Retrieve pins data from Firebase when the page loads
-        window.onload = retrievePinsFromFirebase;
+        // Example to retrieve pins data for a specific VisitID when the page loads
+        // window.onload = function() {
+        //     let visitID = prompt("Enter Visit ID to load pins:");
+        //     if (visitID) {
+        //         retrievePinsFromFirebase(visitID);
+        //     }
+        // };
     </script>
 </body>
 </html>

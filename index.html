@@ -57,6 +57,10 @@
         <input type="text" id="visitID">
         <button id="savePin">Accept Pin and Save</button>
         <button id="undoPin">Undo Last Pin</button>
+        <br>
+        <label for="visitIDCombo">View Pins for Visit ID:</label>
+        <select id="visitIDCombo"></select>
+        <button id="viewPins">View Pins</button>
     </div>
 
     <script>
@@ -127,6 +131,15 @@
             }
         });
 
+        document.getElementById('viewPins').addEventListener('click', function() {
+            let visitID = document.getElementById('visitIDCombo').value;
+            if (visitID) {
+                retrievePinsFromFirebase(visitID);
+            } else {
+                alert("Please select a Visit ID.");
+            }
+        });
+
         function storePinsInFirebase() {
             let visitID = document.getElementById('visitID').value;
             if (visitID) {
@@ -138,6 +151,7 @@
                         console.error("Error storing data in Firebase: ", error);
                     } else {
                         console.log("Pins data stored in Firebase.");
+                        loadVisitIDs(); // Refresh the Visit ID combobox
                     }
                 });
             } else {
@@ -156,13 +170,23 @@
             });
         }
 
-        // Example to retrieve pins data for a specific VisitID when the page loads
-        // window.onload = function() {
-        //     let visitID = prompt("Enter Visit ID to load pins:");
-        //     if (visitID) {
-        //         retrievePinsFromFirebase(visitID);
-        //     }
-        // };
+        function loadVisitIDs() {
+            firebase.database().ref('pins').once('value').then(function(snapshot) {
+                let visitIDCombo = document.getElementById('visitIDCombo');
+                visitIDCombo.innerHTML = ''; // Clear existing options
+                snapshot.forEach(function(childSnapshot) {
+                    let option = document.createElement('option');
+                    option.value = childSnapshot.key;
+                    option.textContent = childSnapshot.key;
+                    visitIDCombo.appendChild(option);
+                });
+            }).catch(function(error) {
+                console.error("Error loading Visit IDs from Firebase: ", error);
+            });
+        }
+
+        // Load Visit IDs when the page loads
+        window.onload = loadVisitIDs;
     </script>
 </body>
 </html>

@@ -60,7 +60,6 @@
         <br>
         <label for="visitIDCombo">View Pins for Visit ID:</label>
         <select id="visitIDCombo"></select>
-        <button id="viewPins">View Pins</button>
     </div>
 
     <script>
@@ -131,10 +130,11 @@
             }
         });
 
-        document.getElementById('viewPins').addEventListener('click', function() {
-            let visitID = document.getElementById('visitIDCombo').value;
+        document.getElementById('visitIDCombo').addEventListener('change', function() {
+            let visitID = this.value;
             if (visitID) {
                 retrievePinsFromFirebase(visitID);
+                document.getElementById('visitID').value = visitID;
             } else {
                 alert("Please select a Visit ID.");
             }

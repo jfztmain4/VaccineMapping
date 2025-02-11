@@ -56,7 +56,8 @@
     </div>
     <div id="controlPanel">
         <label for="clinicName">Clinic Name:</label>
-        <input type="text" id="clinicName">
+        <input type="text" id="clinicName" list="clinicNameList">
+        <datalist id="clinicNameList"></datalist>
         <label for="visitID">Visit ID:</label>
         <input type="text" id="visitID">
         <button id="savePin">Accept Pin and Save</button>
@@ -160,6 +161,7 @@
                     } else {
                         alert("Pins data stored successfully!");
                         console.log("Pins data stored in Firebase.");
+                        loadClinicNames(); // Refresh the Clinic Name datalist
                         loadVisitIDs(); // Refresh the Visit ID combobox
                     }
                 });
@@ -204,8 +206,25 @@
             }
         }
 
-        // Load Visit IDs when the page loads
-        window.onload = loadVisitIDs;
+        function loadClinicNames() {
+            firebase.database().ref('pins').once('value').then(function(snapshot) {
+                let clinicNameList = document.getElementById('clinicNameList');
+                clinicNameList.innerHTML = ''; // Clear existing options
+                snapshot.forEach(function(childSnapshot) {
+                    let option = document.createElement('option');
+                    option.value = childSnapshot.key;
+                    clinicNameList.appendChild(option);
+                });
+            }).catch(function(error) {
+                console.error("Error loading Clinic Names from Firebase: ", error);
+            });
+        }
+
+        // Load Clinic Names when the page loads
+        window.onload = function() {
+            loadClinicNames();
+            loadVisitIDs();
+        };
     </script>
 </body>
 </html>

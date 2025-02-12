@@ -227,7 +227,7 @@
             }
         }
 
-        function loadClinicNames() {
+               function loadClinicNames() {
             firebase.database().ref('pins').once('value').then(function(snapshot) {
                 let clinicNameList = document.getElementById('clinicNameList');
                 clinicNameList.innerHTML = ''; // Clear existing options
@@ -241,10 +241,7 @@
             });
         }
 
-        // Load Clinic Names and initialize the page
-        window.onload = function() {
-            loadClinicNames();
-        };
+        loadClinicNames(); // Initial load of clinic names
     </script>
 </body>
 </html>

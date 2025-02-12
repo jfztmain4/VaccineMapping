@@ -21,6 +21,7 @@
             height: 763px;
             position: relative;
             overflow: hidden;
+            margin-top: 100px; /* Ensure image starts below control panel */
         }
         #image {
             position: absolute;
@@ -62,6 +63,7 @@
         <input type="text" id="visitID">
         <button id="savePin">Accept Pin and Save</button>
         <button id="undoPin">Undo Last Pin</button>
+        <button id="newEntry">New Entry</button>
         <br>
         <label for="visitIDCombo">View Pins for Visit ID:</label>
         <br>
@@ -138,6 +140,13 @@
             }
         });
 
+        document.getElementById('newEntry').addEventListener('click', function() {
+            pins = [];
+            drawPins();
+            document.getElementById('visitID').value = '';
+            document.getElementById('visitID').focus();
+        });
+
         document.getElementById('visitIDCombo').addEventListener('change', function() {
             let visitID = this.value;
             if (visitID) {
@@ -212,6 +221,8 @@
                     console.error("Error loading Visit IDs from Firebase: ", error);
                 });
             } else {
+                let visitIDCombo = document.getElementById('visitIDCombo');
+                visitIDCombo.innerHTML = ''; // Clear options if clinicName is empty
                 alert("Please enter Clinic Name to load Visit IDs.");
             }
         }
